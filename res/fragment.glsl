@@ -4,7 +4,6 @@ in vec2 uv;
 
 out vec4 color;
 
-uniform ivec2 viewport_size;
 uniform ivec2 tex_size;
 uniform sampler2D tex;
 

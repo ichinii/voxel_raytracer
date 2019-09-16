@@ -144,7 +144,6 @@ int main()
 		
 		{ // present image to screen
 			glUseProgram(display_program);
-			glUniform2i(glGetUniformLocation(display_program, "viewport_size"), window_size.x, window_size.y);
 			glUniform2i(glGetUniformLocation(display_program, "tex_size"), voxel_tex_size.x, voxel_tex_size.y);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glBindVertexArray(vao);
