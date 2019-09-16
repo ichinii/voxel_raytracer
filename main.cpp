@@ -18,7 +18,7 @@ auto& operator << (std::basic_ostream<CharT, Traits>& os, glm::vec3 vec)
 	return os << '(' << vec.x << '|' << vec.y << '|' << vec.z << ')';
 }
 
-constexpr auto size = glm::uvec3(1, 1, 1) * 16u;
+constexpr auto size = glm::uvec3(1, 1, 1) * 128u;
 constexpr auto length = size.x * size.y * size.z;
 using cube_t = unsigned char;
 using cubes_t = cube_t[length];
@@ -108,9 +108,16 @@ int main()
 
 	using clock = std::chrono::steady_clock;
 	auto start_time = clock::now();
+	auto last_time = start_time;
+	auto last_second = start_time;
+	auto time_ms_sum = 0ms;
+	auto time_us_sum = 0us;
+	auto frames_per_seconds_count = 0;
 
 	while (!glfwWindowShouldClose(window)) {
 		auto time_before = clock::now();
+		[[maybe_unused]] auto delta_time = time_before - last_time;
+		last_time = time_before;
 		auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(time_before - start_time);
 
 		{ // launch compute shaders and draw to image
@@ -140,10 +147,24 @@ int main()
 			glBindVertexArray(0);
 		}
 
-		auto time_after = clock::now();
-		auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_after - time_before);
-		auto time_us = std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before);
-		std::cout << "duration: " << time_ms.count() << "ms ( " << time_us.count() << "us )" << std::endl;
+		{ // timing and logging
+			++frames_per_seconds_count;
+			auto time_after = clock::now();
+			auto time_diff = time_after - time_before;
+			time_ms_sum += std::chrono::duration_cast<std::chrono::milliseconds>(time_diff);
+			time_us_sum += std::chrono::duration_cast<std::chrono::microseconds>(time_diff);
+			if (std::chrono::duration_cast<std::chrono::seconds>(time_after - last_second).count() >= 1) {
+				time_ms_sum /= frames_per_seconds_count;
+				time_us_sum /= frames_per_seconds_count;
+				std::cout << "avg dur per frame: " << time_ms_sum.count() << "ms ( "
+					<< time_us_sum.count() << "us ) "
+					<< frames_per_seconds_count << "fps" << std::endl;
+				time_ms_sum = 0ms;
+				time_us_sum = 0us;
+				frames_per_seconds_count = 0;
+				last_second = time_after;
+			}
+		}
 
 		glfwPollEvents();
 		glfwGetWindowSize(window, &window_size.x, &window_size.y);
