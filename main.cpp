@@ -25,7 +25,9 @@ constexpr auto size = glm::uvec3(1, 1, 1) * 16u;
 constexpr auto length = size.x * size.y * size.z;
 using cube_t = unsigned char;
 using cubes_t = cube_t[length];
-// using camera_t = struct { glm::vec3 pos, dir; glm::uvec2 size; float fov; };
+constexpr auto speed = 1.f;
+using ortho_camera_t = struct { glm::vec3 pos, dir; };
+// using persp_camera_t = struct { glm::vec3 pos, dir; float fov; };
 
 int main()
 {
@@ -109,6 +111,10 @@ int main()
 	glBindVertexArray(0);
 	glUseProgram(0);
 
+	auto camera = ortho_camera_t{{1, 1, -3}, glm::normalize(glm::vec3{0, 0, 1})};
+	auto camera_up = glm::vec3(0, 1, 0);
+	auto cursor_pos = glm::dvec2(0, 0);
+
 	using clock = std::chrono::steady_clock;
 	auto start_time = clock::now();
 	auto last_time = start_time;
@@ -119,17 +125,16 @@ int main()
 
 	while (!glfwWindowShouldClose(window)) {
 		auto time_before = clock::now();
-		[[maybe_unused]] auto delta_time = time_before - last_time;
+		auto delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(time_before - last_time);
 		last_time = time_before;
 		auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(time_before - start_time);
+		auto camera_right = glm::cross(camera.dir, camera_up);
 
 		{ // launch compute shaders and draw to image
 			glUseProgram(voxel_program);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, voxel_cubes_tex);
-			auto camera_pos = glm::vec3 { glm::sin(elapsed_time.count() / 5000.f) * size.x * 1.5f, glm::cos(elapsed_time.count() / 5000.f) * size.y , size.z * 2};
-			// auto camera_pos = glm::vec3(size) * glm::vec3(1, 2, 1);
-			auto camera_view_mat = glm::inverse(glm::lookAt(camera_pos, {0, 0, 0}, {0, 1, 0}));
+			auto camera_view_mat = glm::inverse(glm::lookAt(camera.pos, camera.pos + camera.dir, {0, 1, 0}));
 			glUniformMatrix4fv(glGetUniformLocation(voxel_program, "camera_view_mat"), 1, GL_FALSE, &camera_view_mat[0][0]);
 			glDispatchCompute((GLuint)voxel_tex_size.x, (GLuint)voxel_tex_size.y, 1);
 		}
@@ -162,6 +167,8 @@ int main()
 				std::cout << "avg dur per frame: " << time_ms_sum.count() << "ms ( "
 					<< time_us_sum.count() << "us ) "
 					<< frames_per_seconds_count << "fps" << std::endl;
+				std::cout << "camera pos: " << camera.pos << ", dir: " << camera.dir << std::endl;
+
 				time_ms_sum = 0ms;
 				time_us_sum = 0us;
 				frames_per_seconds_count = 0;
@@ -172,6 +179,17 @@ int main()
 		glfwPollEvents();
 		glfwGetWindowSize(window, &window_size.x, &window_size.y);
 		glViewport(0, 0, window_size.x, window_size.y);
+		if (glfwGetKey(window, GLFW_KEY_S) ) camera.pos -= camera.dir * speed * (delta_time.count() / 1000.f);
+		if (glfwGetKey(window, GLFW_KEY_W) ) camera.pos += camera.dir * speed * (delta_time.count() / 1000.f);
+		if (glfwGetKey(window, GLFW_KEY_A) ) camera.pos -= camera_right * speed * (delta_time.count() / 1000.f);
+		if (glfwGetKey(window, GLFW_KEY_D) ) camera.pos += camera_right * speed * (delta_time.count() / 1000.f);
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ) camera.pos -= camera_up * speed * (delta_time.count() / 1000.f);
+		if (glfwGetKey(window, GLFW_KEY_SPACE) ) camera.pos += camera_up * speed * (delta_time.count() / 1000.f);
+		glfwGetCursorPos(window, &cursor_pos.x, &cursor_pos.y);
+		glfwSetCursorPos(window, window_size.x / 2.0, window_size.y / 2.0);
+		cursor_pos -= glm::dvec2(window_size) / 2.0;
+		camera.dir = glm::rotate(camera.dir, static_cast<float>(cursor_pos.x) /  1000.f, camera_up);
+		camera.dir = glm::rotate(camera.dir, static_cast<float>(cursor_pos.y) / -1000.f, camera_right);
 	}
 
 	glfwTerminate();

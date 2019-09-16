@@ -135,7 +135,7 @@ void main() {
 			float cube = texture(cubes_tex, aabb_intersect_pos / cubes_dims).r;
 
 			if (cube > 0) {
-				store = true;
+				/* store = true; */
 				pixel = vec4(0, 0, 0, 1);
 			} else {
 				for (int i = 0; i < 100; ++i) {
