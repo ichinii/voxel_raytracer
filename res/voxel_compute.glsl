@@ -5,6 +5,7 @@ layout(rgba32f, binding = 0) uniform image2D img_output;
 
 uniform sampler3D cubes_tex;
 uniform mat4 camera_view_mat;
+uniform float elapsed_time_s;
 
 void swap(inout float a, inout float b)
 {
@@ -13,9 +14,9 @@ void swap(inout float a, inout float b)
 	b = d;
 }
 
-vec3 perspective_ray(in vec3 center_dir, in vec2 normalized_pixel_coord)
+vec3 perspective_ray(in vec2 normalized_centered_coord, float fov)
 {
-	return normalize(vec3(center_dir.xy + (normalized_pixel_coord * 2.0 - 1.0), center_dir.z * 10));
+	return normalize(mix(vec3(0, 0, 1), vec3(normalized_centered_coord.xy, 0), fov));
 }
 
 bool is_inside(ivec3 pos)
@@ -68,7 +69,7 @@ void intersect_aabb(in vec3 ray_pos, in vec3 ray_dir, in vec3 bottom_left, in ve
 		tmax = tzmax;
 
 	intersected = true;
-	intersect_pos = ray_pos + ray_dir * tmin;
+	intersect_pos = ray_pos + ray_dir * (tmin + 0.001f);
 }
 
 void intersect_cubes(in ivec3 inside_cube, in vec3 ray_pos, in vec3 ray_dir,
@@ -115,11 +116,12 @@ void main() {
 	ivec3 cubes_dims = textureSize(cubes_tex, 0);
   ivec2 pixel_coord = ivec2(gl_GlobalInvocationID.xy);
 	vec2 centered_coord = pixel_coord - dims / 2.0;
-	vec2 normalized_pixel_coord = vec2(pixel_coord) / dims;
+	vec2 normalized_centered_coord = vec2(centered_coord) / dims * 2.0;
 
-	vec3 ray_origin = (camera_view_mat * vec4((pixel_coord + centered_coord) / 2.f / 8.f, 0, 1)).xyz;
-	vec3 ray_dir = normalize( (camera_view_mat * vec4(0, 0, -1, 1)).xyz );
-
+	/* vec3 ray_origin = (camera_view_mat * vec4((pixel_coord + centered_coord) / 2.f / 8.f, 0, 1)).xyz; */
+	/* vec3 ray_dir = normalize( (camera_view_mat * vec4(0, 0, -1, 1)).xyz ); */
+	vec3 ray_origin = vec3(20, 20, -30);
+	vec3 ray_dir = normalize(camera_view_mat * vec4(perspective_ray(normalized_centered_coord, .5f), 0)).xyz;
 	bool store = false;
 	vec4 pixel;
 
@@ -135,7 +137,7 @@ void main() {
 			float cube = texture(cubes_tex, aabb_intersect_pos / cubes_dims).r;
 
 			if (cube > 0) {
-				/* store = true; */
+				store = true;
 				pixel = vec4(0, 0, 0, 1);
 			} else {
 				for (int i = 0; i < 100; ++i) {
@@ -150,13 +152,13 @@ void main() {
 
 						if (cube > 0) {
 							store = true;
-							pixel = vec4(cube * vec3(0, 1, 0) * clamp(dot(ray_dir, -intersect_normal), .2f, 1), 1);
+							pixel = vec4(vec3(abs(intersect_normal).x > .9, abs(intersect_normal.y) > .9, abs(intersect_normal.z) > .9) * clamp(dot(ray_dir, -intersect_normal), .2f, 1), 1);
 							break;
 						}
 						inside_cube = intersect_cube;
 					} else {
 						store = true;
-						pixel = vec4(0, 0, 1, 1);
+						pixel = vec4(0, 0, 0, 1);
 						break;
 					}
 				}
@@ -178,5 +180,5 @@ void main() {
 		}
 	}
   
-	imageStore(img_output, pixel_coord, store ? pixel : vec4(0, 0, .5, 1));
+	imageStore(img_output, pixel_coord, store ? pixel : vec4(abs(ray_dir) / 2.f, 1));
 }

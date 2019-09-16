@@ -8,7 +8,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "shader.hpp"
-#include <thread>
 
 using namespace std::chrono_literals;
 
@@ -127,7 +126,7 @@ int main()
 		auto time_before = clock::now();
 		auto delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(time_before - last_time);
 		last_time = time_before;
-		auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(time_before - start_time);
+		[[maybe_unused]] auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(time_before - start_time);
 		auto camera_right = glm::cross(camera.dir, camera_up);
 
 		{ // launch compute shaders and draw to image
