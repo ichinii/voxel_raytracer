@@ -37,9 +37,11 @@ int main()
 		if (!mods && key == GLFW_KEY_Q) glfwSetWindowShouldClose(window, true);
 	});
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(0);
 
 	if (glewInit() != GLEW_OK) return 0;
 	glEnable(GL_TEXTURE_3D);
+	glClearColor(0.5, 0, 0, 1);
 
 	// std::this_thread::sleep_for(1s);
 	auto display_program = createProgram({{GL_VERTEX_SHADER, "res/vertex.glsl"}, {GL_FRAGMENT_SHADER, "res/fragment.glsl"}});

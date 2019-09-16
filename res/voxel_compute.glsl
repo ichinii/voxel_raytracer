@@ -117,7 +117,7 @@ void main() {
 	vec2 centered_coord = pixel_coord - dims / 2.0;
 	vec2 normalized_pixel_coord = vec2(pixel_coord) / dims;
 
-	vec3 ray_origin = (camera_view_mat * vec4((pixel_coord + centered_coord) / 2.f / 16.f, 0, 1)).xyz;
+	vec3 ray_origin = (camera_view_mat * vec4((pixel_coord + centered_coord) / 2.f / 8.f, 0, 1)).xyz;
 	vec3 ray_dir = normalize( (camera_view_mat * vec4(0, 0, -1, 1)).xyz );
 
 	bool store = false;
@@ -150,7 +150,7 @@ void main() {
 
 						if (cube > 0) {
 							store = true;
-							pixel = vec4(cube * vec3(0, 1, 0) * clamp(dot(ray_dir, -intersect_normal), .2, 1), 1);
+							pixel = vec4(cube * vec3(0, 1, 0) * clamp(dot(ray_dir, -intersect_normal), .2f, 1), 1);
 							break;
 						}
 						inside_cube = intersect_cube;
@@ -177,7 +177,6 @@ void main() {
 			/* } */
 		}
 	}
-
   
 	imageStore(img_output, pixel_coord, store ? pixel : vec4(0, 0, .5, 1));
 }
