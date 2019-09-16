@@ -10,5 +10,5 @@ uniform sampler2D tex;
 
 void main()
 {
-	color = vec4(texture(tex, (vec2(gl_FragCoord.xy) / viewport_size) * (vec2(viewport_size) / tex_size)).rgb, 1);
+	color = vec4(texture(tex, gl_FragCoord.xy / tex_size).rgb, 1);
 }

@@ -18,7 +18,7 @@ auto& operator << (std::basic_ostream<CharT, Traits>& os, glm::vec3 vec)
 	return os << '(' << vec.x << '|' << vec.y << '|' << vec.z << ')';
 }
 
-constexpr auto size = glm::uvec3(1, 1, 1) * 128u;
+constexpr auto size = glm::uvec3(1, 1, 1) * 16u;
 constexpr auto length = size.x * size.y * size.z;
 using cube_t = unsigned char;
 using cubes_t = cube_t[length];
