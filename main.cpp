@@ -12,10 +12,13 @@
 
 using namespace std::chrono_literals;
 
-template <typename CharT, typename Traits>
-auto& operator << (std::basic_ostream<CharT, Traits>& os, glm::vec3 vec)
+template <typename CharT, typename Traits, glm::length_t L, typename T, glm::qualifier Q>
+auto& operator << (std::basic_ostream<CharT, Traits>& os, glm::vec<L, T, Q>& vec)
 {
-	return os << '(' << vec.x << '|' << vec.y << '|' << vec.z << ')';
+	if (L == 0) return os << "()";
+	os << '(' << vec[0];
+	for (glm::length_t i = 1; i < L; ++i) os << '|' << vec[i];
+	return os << ')';
 }
 
 constexpr auto size = glm::uvec3(1, 1, 1) * 16u;
